@@ -315,14 +315,20 @@
           return $log.error('Get From State: No state provided');
         }
         var result = [];
+
+        function collect(cssItem)
+        {
+          if (angular.isFunction(cssItem)) {
+            dynamicPaths.push(parse(cssItem));
+          }
+          result.push(parse(cssItem));
+        }
+
         // State "views" notation
         if (angular.isDefined(state.views)) {
           angular.forEach(state.views, function (item) {
             if (item.css) {
-              if (angular.isFunction(item.css)) {
-                dynamicPaths.push(parse(item.css));
-              }
-              result.push(parse(item.css));
+              collect(item.css);
             }
           });
         }
@@ -330,18 +336,12 @@
         if (angular.isDefined(state.children)) {
           angular.forEach(state.children, function (child) {
             if (child.css) {
-              if (angular.isFunction(child.css)) {
-                dynamicPaths.push(parse(child.css));
-              }
-              result.push(parse(child.css));
+              collect(child.css);
             }
             if (angular.isDefined(child.children)) {
               angular.forEach(child.children, function (childChild) {
                 if (childChild.css) {
-                  if (angular.isFunction(childChild.css)) {
-                    dynamicPaths.push(parse(childChild.css));
-                  }
-                  result.push(parse(childChild.css));
+                  collect(childChild.css);
                 }
               });
             }
@@ -354,10 +354,7 @@
 
           if(parent.css)
           {
-            if (angular.isFunction(parent.css)) {
-              dynamicPaths.push(parse(parent.css));
-            }
-            result.push(parse(parent.css));
+            collect(parent.css);
           }
         }
         // State default notation
@@ -369,17 +366,11 @@
           // For multiple stylesheets
           if (angular.isArray(css)) {
               angular.forEach(css, function (itemCss) {
-                if (angular.isFunction(itemCss)) {
-                  dynamicPaths.push(parse(itemCss));
-                }
-                result.push(parse(itemCss));
+                collect(itemCss);
               });
             // For single stylesheets
           } else {
-            if (angular.isFunction(css)) {
-              dynamicPaths.push(parse(css));
-            }
-            result.push(parse(css));
+            collect(css);
           }
         }
         return result;

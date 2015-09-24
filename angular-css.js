@@ -347,6 +347,19 @@
             }
           });
         }
+        // State "parent" notation
+        if (angular.isDefined(state.parent)) {
+          var $state= $injector.get('$state');
+          var parent= $state.get(state.parent);
+
+          if(parent.css)
+          {
+            if (angular.isFunction(parent.css)) {
+              dynamicPaths.push(parse(parent.css));
+            }
+            result.push(parse(parent.css));
+          }
+        }
         // State default notation
         if (
             angular.isDefined(state.css) ||

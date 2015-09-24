@@ -120,6 +120,10 @@
         // Function syntax
         if (angular.isFunction(obj)) {
           obj = angular.copy($injector.invoke(obj));
+
+          if(angular.isArray(obj)) {
+            return obj.map(parse);
+          }
         }
         // String syntax
         if (angular.isString(obj)) {
@@ -318,10 +322,19 @@
 
         function collect(cssItem)
         {
-          if (angular.isFunction(cssItem)) {
-            dynamicPaths.push(parse(cssItem));
+          var parsedCssItem= parse(cssItem);
+
+          if(angular.isArray(parsedCssItem)) {
+            if (angular.isFunction(cssItem)) {
+              dynamicPaths.push.apply(dynamicPaths, parsedCssItem);
+            }
+            result.push.apply(result, parsedCssItem);
+          } else {
+            if (angular.isFunction(cssItem)) {
+              dynamicPaths.push(parsedCssItem);
+            }
+            result.push(parsedCssItem);
           }
-          result.push(parse(cssItem));
         }
 
         // State "views" notation

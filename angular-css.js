@@ -117,8 +117,8 @@
         if (!obj) {
           return;
         }
-        // Function syntax
-        if (angular.isFunction(obj)) {
+        // Function syntax (or annotated functions)
+        if (angular.isFunction(obj) || angular.isArray(obj) && angular.isFunction(obj[obj.length-1])) {
           obj = angular.copy($injector.invoke(obj));
 
           if(angular.isArray(obj)) {
@@ -371,20 +371,8 @@
           }
         }
         // State default notation
-        if (
-            angular.isDefined(state.css) ||
-            (angular.isDefined(state.data) && angular.isDefined(state.data.css))
-        ) {
-          var css = state.css || state.data.css;
-          // For multiple stylesheets
-          if (angular.isArray(css)) {
-              angular.forEach(css, function (itemCss) {
-                collect(itemCss);
-              });
-            // For single stylesheets
-          } else {
-            collect(css);
-          }
+        if (angular.isDefined(state.css) || (angular.isDefined(state.data) && angular.isDefined(state.data.css))) {
+          collect(state.css || state.data.css);
         }
         return result;
       };

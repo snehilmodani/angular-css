@@ -32,7 +32,8 @@
       type: 'text/css',
       container: 'head',
       method: 'append',
-      weight: 0
+      weight: 0,
+      stateEventName: '$stateChangeSuccess'
     };
 
     this.$get = ['$rootScope','$injector','$q','$window','$timeout','$compile','$http','$filter','$log',
@@ -158,7 +159,7 @@
       $rootScope.$on('$routeChangeSuccess', $routeEventListener);
 
       // States event listener ($state required)
-      $rootScope.$on('$stateChangeSuccess', $stateEventListener);
+      $rootScope.$on(options.stateEventName, $stateEventListener);
 
       /**
        * Bust Cache

@@ -1,8 +1,8 @@
 /**
  * AngularCSS - CSS on-demand for AngularJS
- * @version v1.0.7
- * @author DOOR3, Alex Castillo
- * @link http://door3.github.io/angular-css
+ * @version v1.0.8
+ * @author Alex Castillo
+ * @link http://castillo-io.github.io/angular-css
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
 
@@ -14,13 +14,13 @@
    * AngularCSS Module
    * Contains: config, constant, provider and run
    **/
-  var angularCSS = angular.module('door3.css', []);
+  var angularCSS = angular.module('angularCSS', []);
 
-  // Config
-  angularCSS.config(['$logProvider', function ($logProvider) {
-    // Turn off/on in order to see console logs during dev mode
-    $logProvider.debugEnabled(false);
-  }]);
+  // Old module name handler
+  angular.module('door3.css', [])
+    .run(function () {
+      console.error('AngularCSS: The module name "door3.css" is now deprecated. Please use "angularCSS" instead.');
+    });
 
   // Provider
   angularCSS.provider('$css', [function $cssProvider() {
@@ -35,13 +35,27 @@
       weight: 0,
       stateEventName: '$stateChangeSuccess'
     };
+    
+    var DEBUG = false;
 
-    this.$get = ['$rootScope','$injector','$q','$window','$timeout','$compile','$http','$filter','$log',
-                function $get($rootScope, $injector, $q, $window, $timeout, $compile, $http, $filter, $log) {
+    // Turn off/on in order to see console logs during dev mode
+    this.debugMode = function(mode) {
+        if (angular.isDefined(mode))
+            DEBUG = mode;
+        return DEBUG;
+    };
+
+    this.$get = ['$rootScope','$injector','$q','$window','$timeout','$compile','$http','$filter','$log', '$interpolate',
+                function $get($rootScope, $injector, $q, $window, $timeout, $compile, $http, $filter, $log, $interpolate) {
 
       var $css = {};
 
       var template = '<link ng-repeat="stylesheet in stylesheets | orderBy: \'weight\' track by $index " rel="{{ stylesheet.rel }}" type="{{ stylesheet.type }}" ng-href="{{ stylesheet.href }}" ng-attr-media="{{ stylesheet.media }}">';
+
+      // Using correct interpolation symbols.
+      template = template
+        .replace(/{{/g, $interpolate.startSymbol())
+        .replace(/}}/g, $interpolate.endSymbol());
 
       // Variables - default options that can be overridden from application config
       var mediaQuery = {}, mediaQueryListener = {}, mediaQueriesToIgnore = ['print'], options = angular.extend({}, defaults),
@@ -54,7 +68,7 @@
       function $directiveAddEventListener(event, directive, scope) {
         // Binds directive's css
         if (scope && directive.hasOwnProperty('css')) {
-          $css.bind(parse(directive.css), scope);
+          $css.bind(directive.css, scope);
         }
       }
 
@@ -166,7 +180,8 @@
        **/
       function bustCache(stylesheet) {
         if (!stylesheet) {
-          return $log.error('No stylesheets provided');
+          if(DEBUG) $log.error('No stylesheets provided');
+          return;
         }
         var queryString = '?cache=';
         // Append query string for bust cache only once
@@ -180,7 +195,8 @@
        **/
       function filterBy(array, prop) {
         if (!array || !prop) {
-          return $log.error('filterBy: missing array or property');
+            if(DEBUG) $log.error('filterBy: missing array or property');
+            return;
         }
         return $filter('filter')(array, function (item) {
           return item[prop];
@@ -192,7 +208,8 @@
        **/
       function addViaMediaQuery(stylesheet) {
         if (!stylesheet) {
-          return $log.error('No stylesheet provided');
+            if(DEBUG) $log.error('No stylesheet provided');
+            return;
         }
         // Media query object
         mediaQuery[stylesheet.href] = $window.matchMedia(stylesheet.media);
@@ -213,7 +230,7 @@
               }
             }
           });
-        }
+        };
         // Listen for media query changes
         mediaQuery[stylesheet.href].addListener(mediaQueryListener[stylesheet.href]);
         // Invoke first media query check
@@ -225,7 +242,8 @@
        **/
       function removeViaMediaQuery(stylesheet) {
         if (!stylesheet) {
-          return $log.error('No stylesheet provided');
+            if(DEBUG) $log.error('No stylesheet provided');
+            return;
         }
         // Remove media query listener
         if ($rootScope && angular.isDefined(mediaQuery)
@@ -240,7 +258,8 @@
        **/
       function isMediaQuery(stylesheet) {
         if (!stylesheet) {
-          return $log.error('No stylesheet provided');
+            if(DEBUG) $log.error('No stylesheet provided');
+            return;
         }
         return !!(
           // Check for media query setting
@@ -257,7 +276,8 @@
        **/
       $css.getFromRoute = function (route) {
         if (!route) {
-          return $log.error('Get From Route: No route provided');
+            if(DEBUG) $log.error('Get From Route: No route provided');
+            return;
         }
         var css = null, result = [];
         if (route.$$route && route.$$route.css) {
@@ -290,7 +310,8 @@
        **/
       $css.getFromRoutes = function (routes) {
         if (!routes) {
-          return $log.error('Get From Routes: No routes provided');
+            if(DEBUG) $log.error('Get From Routes: No routes provided');
+            return;
         }
         var result = [];
         // Make array of all routes
@@ -308,7 +329,8 @@
        **/
       $css.getFromState = function (state) {
         if (!state) {
-          return $log.error('Get From State: No state provided');
+            if(DEBUG) $log.error('Get From State: No state provided');
+            return;
         }
         var result = [];
 
@@ -374,7 +396,8 @@
        **/
       $css.getFromStates = function (states) {
         if (!states) {
-          return $log.error('Get From States: No states provided');
+            if(DEBUG) $log.error('Get From States: No states provided');
+            return;
         }
         var result = [];
         // Make array of all routes
@@ -420,8 +443,8 @@
           stylesheet = stylesheets[key] = parse(stylesheet);
           stylesheetLoadPromises.push(
             // Preload via ajax request
-            $http.get(stylesheet.href).error(function (response) {
-              $log.error('AngularCSS: Incorrect path for ' + stylesheet.href);
+            $http.get(stylesheet.href).catch(function (response) {
+                if(DEBUG) $log.error('AngularCSS: Incorrect path for ' + stylesheet.href);
             })
           );
         });
@@ -437,7 +460,8 @@
        **/
        $css.bind = function (css, $scope) {
         if (!css || !$scope) {
-          return $log.error('No scope or stylesheets provided');
+            if(DEBUG) $log.error('No scope or stylesheets provided');
+            return;
         }
         var result = [];
         // Adds route css rules to array
@@ -449,10 +473,10 @@
           result.push(parse(css));
         }
         $css.add(result);
-        $log.debug('$css.bind(): Added', result);
+        if(DEBUG) $log.debug('$css.bind(): Added', result);
         $scope.$on('$destroy', function () {
           $css.remove(result);
-          $log.debug('$css.bind(): Removed', result);
+          if(DEBUG) $log.debug('$css.bind(): Removed', result);
         });
        };
 
@@ -461,7 +485,8 @@
        **/
       $css.add = function (stylesheets, callback) {
         if (!stylesheets) {
-          return $log.error('No stylesheets provided');
+            if(DEBUG) $log.error('No stylesheets provided');
+            return;
         }
         if (!angular.isArray(stylesheets)) {
           stylesheets = [stylesheets];
@@ -471,7 +496,7 @@
           // Avoid adding duplicate stylesheets
           if (stylesheet.href && !$filter('filter')($rootScope.stylesheets, { href: stylesheet.href }).length) {
             // Bust Cache feature
-            bustCache(stylesheet)
+            bustCache(stylesheet);
             // Media Query add support check
             if (isMediaQuery(stylesheet)) {
               addViaMediaQuery(stylesheet);
@@ -479,7 +504,7 @@
             else {
               $rootScope.stylesheets.push(stylesheet);
             }
-            $log.debug('$css.add(): ' + stylesheet.href);
+            if(DEBUG) $log.debug('$css.add(): ' + stylesheet.href);
           }
         });
         // Broadcasts custom event for css add
@@ -491,7 +516,8 @@
        **/
       $css.remove = function (stylesheets, callback) {
         if (!stylesheets) {
-          return $log.error('No stylesheets provided');
+            if(DEBUG) $log.error('No stylesheets provided');
+            return;
         }
         if (!angular.isArray(stylesheets)) {
           stylesheets = [stylesheets];
@@ -512,7 +538,7 @@
           }
           // Remove stylesheet via media query
           removeViaMediaQuery(stylesheet);
-          $log.debug('$css.remove(): ' + stylesheet.href);
+          if(DEBUG) $log.debug('$css.remove(): ' + stylesheet.href);
         });
         // Broadcasts custom event for css remove
         $rootScope.$broadcast('$cssRemove', stylesheets, $rootScope.stylesheets);
@@ -526,7 +552,7 @@
         if ($rootScope && $rootScope.hasOwnProperty('stylesheets')) {
           $rootScope.stylesheets.length = 0;
         }
-        $log.debug('all stylesheets removed');
+        if(DEBUG) $log.debug('all stylesheets removed');
       };
 
       // Preload all stylesheets
@@ -549,7 +575,7 @@
       var result = '';
       angular.forEach(stylesheets, function (stylesheet) {
         result += '<link rel="' + stylesheet.rel + '" type="' + stylesheet.type + '" href="' + stylesheet.href + '"';
-        result += (stylesheet.media ? ' media="' + stylesheet.media + '"' : '')
+        result += (stylesheet.media ? ' media="' + stylesheet.media + '"' : '');
         result += '>\n\n';
       });
       return result;
@@ -567,23 +593,72 @@
    **/
   var $directives = {};
   var originalModule = angular.module;
-  angular.module = function (moduleName) {
+  var arraySelect = function(array, action) {
+    return array.reduce(
+      function(previous, current) {
+        previous.push(action(current));
+        return previous;
+      }, []);
+    };
+  var arrayExists = function(array, value) {
+    return array.indexOf(value) > -1;
+  };
+
+  angular.module = function () {
     var module = originalModule.apply(this, arguments);
     var originalDirective = module.directive;
 
     module.directive = function(directiveName, directiveFactory) {
       var originalDirectiveFactory = angular.isFunction(directiveFactory) ?
-      directiveFactory : directiveFactory[directiveFactory.length - 1];
+      directiveFactory : directiveFactory[directiveFactory ? (directiveFactory.length - 1) : 0];
       try {
         var directive = angular.copy(originalDirectiveFactory)();
         directive.directiveName = directiveName;
-        if (directive.hasOwnProperty('css')) {
-          $directives[moduleName+':'+directiveName]= directive;
+        if (directive.hasOwnProperty('css') && !arrayExists(arraySelect($directives, function(x) {return x.ddo.directiveName}), directiveName)) {
+          $directives.push({ ddo: directive, handled: false });
         }
       } catch (e) { }
       return originalDirective.apply(this, arguments);
     };
-
+    var originalComponent = module.component;
+    module.component = function (componentName, componentObject) {
+      componentObject.directiveName = componentName;
+      if (componentObject.hasOwnProperty('css') && !arrayExists(arraySelect($directives, function(x) {return x.ddo.directiveName}), componentName)) {
+        $directives.push({ ddo: componentObject, handled: false });
+      }
+      return originalComponent.apply(this, arguments);
+    };
+    module.config(['$provide','$injector', function ($provide, $injector) {
+      angular.forEach($directives, function ($dir) {
+        if (!$dir.handled) {
+          var $directive = $dir.ddo;
+          var dirProvider = $directive.directiveName + 'Directive';
+          if ($injector.has(dirProvider)) {
+            $dir.handled = true;
+            $provide.decorator(dirProvider, ['$delegate', '$rootScope', '$timeout', function ($delegate, $rootScope, $timeout) {
+              var directive = $delegate[0];
+              var compile = directive.compile;
+              if (!directive.css) {
+                directive.css = $directive.css;
+              }
+              directive.compile = function() {
+                var link = compile ? compile.apply(this, arguments): false;
+                return function(scope) {
+                  var linkArgs = arguments;
+                  $timeout(function () {
+                    if (link) {
+                      link.apply(this, linkArgs);
+                    }
+                  });
+                  $rootScope.$broadcast('$directiveAdd', directive, scope);
+                };
+              };
+              return $delegate;
+            }]);
+          }
+        }
+      });
+    }]);
     return module;
   };
 

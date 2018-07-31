@@ -152,7 +152,7 @@
         // Array of objects syntax
         if (angular.isArray(obj) && angular.isObject(obj[0])) {
           angular.forEach(obj, function (item) {
-            obj = angular.extend(item, options);
+            item = angular.extend(item, options);
           });
         }
         // Map breakpoint to media attribute
